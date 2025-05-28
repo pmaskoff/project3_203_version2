@@ -1,28 +1,48 @@
 import processing.core.PImage;
 
 import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 
 public abstract class Movable extends ActiveAnimatedEntity {
+    
+    private PathingStrategy pathingStrategy;
 
     public Movable(String id, Point position, List<PImage> images, double actionPeriod, double animationPeriod) {
         super(id, position, images, actionPeriod, animationPeriod);
+        // Default to single step pathing strategy
+        this.pathingStrategy = new SingleStepPathingStrategy();
     }
 
     public Point nextPosition(WorldModel world, Point destPos) {
-        int horiz = Integer.signum(destPos.x - this.getPosition().x);
-        Point newPos = new Point(this.getPosition().x + horiz, this.getPosition().y);
-
-        if (horiz == 0 || this.isInvalidMove(world, newPos)) {
-            int vert = Integer.signum(destPos.y - this.getPosition().y);
-            newPos = new Point(this.getPosition().x, this.getPosition().y + vert);
-
-            if (vert == 0 || this.isInvalidMove(world, newPos)) {
-                newPos = this.getPosition();
-            }
+        // Create the predicates and functions needed for the pathing strategy
+        Predicate<Point> canPassThrough = (point) -> 
+            world.withinBounds(point) && !this.isInvalidMove(world, point);
+        
+        BiPredicate<Point, Point> withinReach = (start, end) -> 
+            start.adjacent(end);
+        
+        // Compute the path using the pathing strategy
+        List<Point> path = pathingStrategy.computePath(
+            this.getPosition(), 
+            destPos, 
+            canPassThrough, 
+            withinReach, 
+            PathingStrategy.CARDINAL_NEIGHBORS
+        );
+        
+        // If we have a path, return the first step, otherwise stay in place
+        if (!path.isEmpty()) {
+            return path.get(0);
+        } else {
+            return this.getPosition();
         }
-
-        return newPos;
     }
+    
+    public void setPathingStrategy(PathingStrategy strategy) {
+        this.pathingStrategy = strategy;
+    }
+    
     public abstract boolean moveTo(WorldModel model, Entity target, EventScheduler scheduler);
 
     /**
