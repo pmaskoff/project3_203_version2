@@ -19,6 +19,12 @@ public class DudeFull extends Dude {
     }
 
     public void executeActivity(WorldModel world, ImageStore imageStore, EventScheduler scheduler) {
+        // check infected tile
+        if (isOnInfectedTile(world)) {
+            transformIntoAlien(world, scheduler, imageStore);
+            return;
+        }
+        
         Optional<Entity> fullTarget = world.findNearest(this.getPosition(), new ArrayList<>(List.of(House.class)));
 
         if (fullTarget.isPresent() && this.moveTo(world, fullTarget.get(), scheduler)) {
@@ -26,6 +32,29 @@ public class DudeFull extends Dude {
         } else {
             scheduler.scheduleEvent(this, new Activity(this, world, imageStore), this.getActionPeriod());
         }
+    }
+
+    private boolean isOnInfectedTile(WorldModel world) {
+        if (world.withinBounds(this.getPosition())) {
+            return world.getBackgroundCell(this.getPosition()).getId().equals("infected");
+        }
+        return false;
+    }
+    
+    private void transformIntoAlien(WorldModel world, EventScheduler scheduler, ImageStore imageStore) {
+        DudeInfected infectedDude = new DudeInfected(
+            this.getId() + "_infected",
+            this.getPosition(),
+            imageStore.getImageList("alien"), // Use alien images for infected appearance
+            this.getActionPeriod() / 2.0, // 2x speed
+            this.getAnimationPeriod() / 2.0,
+            this.getResourceLimit()
+        );
+        
+        world.removeEntity(scheduler, this);
+        scheduler.unscheduleAllEvents(this);
+        world.addEntity(infectedDude);
+        infectedDude.scheduleActions(scheduler, world, imageStore);
     }
 
     public boolean transform(WorldModel world, EventScheduler scheduler, ImageStore imageStore) {

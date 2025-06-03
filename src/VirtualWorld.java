@@ -64,18 +64,119 @@ public final class VirtualWorld extends PApplet {
         scheduler.updateOnTime(frameTime);
     }
 
-    // Just for debugging and for P5
-    // Be sure to refactor this method as appropriate
+    // debugging and p5
     public void mousePressed() {
         Point pressed = mouseToPoint();
         System.out.println("CLICK! " + pressed.x + ", " + pressed.y);
+
+        // disco fever event
+        createDiscoFeverEvent(pressed);
 
         Optional<Entity> entityOptional = world.getOccupant(pressed);
         if (entityOptional.isPresent()) {
             Entity entity = entityOptional.get();
             System.out.println(entity.getId() + ": " + entity.getClass());
         }
-
+    }
+    
+    private void createDiscoFeverEvent(Point clickPos) {
+        // create infected area
+        Background infectedBackground = new Background("infected", imageStore.getImageList("infected"));
+        
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                Point infectedPos = new Point(clickPos.x + dx, clickPos.y + dy);
+                if (world.withinBounds(infectedPos)) {
+                    world.setBackgroundCell(infectedPos, infectedBackground);
+                }
+            }
+        }
+        
+        // transform nearest dude
+        transformNearestDude(clickPos);
+        
+        // spawn thanos
+        if (!world.isOccupied(clickPos)) {
+            Thanos thanos = new Thanos(
+                "thanos_" + System.currentTimeMillis(),
+                clickPos,
+                imageStore.getImageList("thanos"),
+                1.0, // action period
+                0.5  // animation period
+            );
+            
+            world.addEntity(thanos);
+            thanos.scheduleActions(scheduler, world, imageStore);
+            
+            System.out.println("DISCO FEVER! Thanos has arrived at " + clickPos.x + ", " + clickPos.y);
+        }
+        
+        // transform standing dudes
+        transformDudesOnInfectedTiles();
+    }
+    
+    private void transformNearestDude(Point clickPos) {
+        // find nearest dude
+        Optional<Entity> nearestDude = world.getEntities().stream()
+            .filter(entity -> (entity instanceof DudeNotFull || entity instanceof DudeFull) && 
+                            !(entity instanceof DudeInfected))
+            .min((e1, e2) -> Integer.compare(
+                e1.getPosition().distanceSquared(clickPos),
+                e2.getPosition().distanceSquared(clickPos)
+            ));
+            
+        if (nearestDude.isPresent() && nearestDude.get() instanceof Dude dude) {
+            // transform into infected
+            DudeInfected infectedDude = new DudeInfected(
+                dude.getId() + "_infected",
+                dude.getPosition(),
+                imageStore.getImageList("alien"), // alien appearance
+                dude.getActionPeriod() / 2.0, // 2x speed
+                dude.getAnimationPeriod() / 2.0,
+                dude.getResourceLimit()
+            );
+            
+            world.removeEntity(scheduler, dude);
+            scheduler.unscheduleAllEvents(dude);
+            world.addEntity(infectedDude);
+            infectedDude.scheduleActions(scheduler, world, imageStore);
+            
+            System.out.println("Nearest dude " + dude.getId() + " has been infected!");
+        }
+    }
+    
+    private void transformDudesOnInfectedTiles() {
+        // find standing dudes
+        List<Entity> dudesToTransform = new ArrayList<>();
+        
+        for (Entity entity : world.getEntities()) {
+            if (entity instanceof Dude) {
+                Point pos = entity.getPosition();
+                if (world.withinBounds(pos) && 
+                    world.getBackgroundCell(pos).getId().equals("infected")) {
+                    dudesToTransform.add(entity);
+                }
+            }
+        }
+        
+        // transform each dude
+        for (Entity dude : dudesToTransform) {
+            if (dude instanceof Dude dudeEntity && !(dudeEntity instanceof DudeInfected)) {
+                DudeInfected infectedDude = new DudeInfected(
+                    dudeEntity.getId() + "_infected",
+                    dudeEntity.getPosition(),
+                    imageStore.getImageList("alien"), // alien appearance
+                    dudeEntity.getActionPeriod() / 2.0, // 2x speed
+                    dudeEntity.getAnimationPeriod() / 2.0,
+                    dudeEntity.getResourceLimit()
+                );
+                
+                world.removeEntity(scheduler, dudeEntity);
+                scheduler.unscheduleAllEvents(dudeEntity);
+                world.addEntity(infectedDude);
+                infectedDude.scheduleActions(scheduler, world, imageStore);
+            }
+        }
     }
 
     public void scheduleActions(WorldModel world, EventScheduler scheduler, ImageStore imageStore) {

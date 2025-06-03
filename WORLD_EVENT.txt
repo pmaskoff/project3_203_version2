@@ -1,0 +1,37 @@
+DISCO FEVER EVENT - Thanos Infection
+
+HOW TO TRIGGER THE EVENT:
+Click anywhere on the world with your mouse. This will trigger the disco fever event at the clicked location.
+
+WHAT HAPPENS WHEN THE EVENT IS TRIGGERED:
+1. A 3x3 area of purple "infected" background tiles appears centered on the click location
+2. Thanos spawns at the center of the clicked location (if not occupied)
+3. Any dudes currently standing on the newly infected tiles immediately transform into infected dudes
+
+WHAT THE AFFECTED ENTITIES (DUDES) DO:
+- When dudes walk over infected purple tiles, they transform into infected dudes (DudeInfected)
+- Infected dudes are still fundamentally Dudes but with modified behavior and appearance
+- Infected dudes have 2x speed (half the action and animation periods)
+- Infected dudes move randomly around the world instead of seeking trees/houses
+- When infected dudes stand on infected tiles, they can transform nearby normal dudes into more infected dudes
+
+WHAT THE NEW ENTITY (THANOS) IS AND HOW IT BEHAVES:
+- Thanos is a purple and gold entity that moves randomly around the world
+- Wherever Thanos walks, he infects the background tile, turning it purple
+- Thanos automatically transforms any nearby normal dudes (within 3 tiles) into infected dudes
+- Thanos moves in random directions (up, down, left, right) each turn
+- Thanos continues to spread the infection and transform dudes as he moves
+
+DESIGN DECISIONS:
+- Used DudeInfected class that extends Dude to modify existing entities rather than create entirely new entity types
+- This follows the assignment requirement to "affect existing mobile entities" by transformation
+- Infected dudes still inherit from Dude but override behavior methods (executeActivity, moveTo, transform)
+- Used alien sprite images for infected dudes to show visual transformation while maintaining Dude inheritance
+- Made infected dudes have 2x speed to make the infection spread faster and more dramatically
+- Used a 3x3 initial infection area to ensure the event has immediate visual impact
+- Implemented transformation checks in both DudeNotFull and DudeFull to ensure all dude types are affected
+- Used distance-based detection for transformations to create area-of-effect behavior
+- Created simple but distinctive pixel art sprites to clearly differentiate the infected entities
+
+PARTNER INFORMATION:
+This project was completed individually by the student. 

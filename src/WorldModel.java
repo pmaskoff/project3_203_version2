@@ -164,6 +164,17 @@ public final class WorldModel {
         }
     }
 
+    public static void parseThanos(WorldModel world, String[] properties, Point pt, String id, ImageStore imageStore) {
+        if (properties.length == Thanos.THANOS_NUM_PROPERTIES) {
+            Entity entity = new Thanos(id, pt, imageStore.getImageList(Thanos.THANOS_KEY),
+                    Double.parseDouble(properties[Thanos.THANOS_ACTION_PERIOD]), 
+                    Double.parseDouble(properties[Thanos.THANOS_ANIMATION_PERIOD]));
+            world.tryAddEntity(entity);
+        }else{
+            throw new IllegalArgumentException(String.format("%s requires %d properties when parsing", Thanos.THANOS_KEY, Thanos.THANOS_NUM_PROPERTIES));
+        }
+    }
+
     public Optional<PImage> getBackgroundImage(Point pos) {
         if (withinBounds(pos)) {
             return Optional.of(getBackgroundCell(pos).getCurrentImage());
@@ -198,6 +209,7 @@ public final class WorldModel {
                 case Tree.TREE_KEY -> parseTree(this, properties, pt, id, imageStore);
                 case Sapling.SAPLING_KEY -> parseSapling(this, properties, pt, id, imageStore);
                 case Stump.STUMP_KEY -> parseStump(this, properties, pt, id, imageStore);
+                case Thanos.THANOS_KEY -> parseThanos(this, properties, pt, id, imageStore);
                 default -> throw new IllegalArgumentException("Entity key is unknown");
             }
         }else{

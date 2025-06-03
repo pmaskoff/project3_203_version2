@@ -33,7 +33,20 @@ public final class WorldView {
 
             if (this.viewport.contains(pos)) {
                 Point viewPoint = this.viewport.worldToViewport(pos.x, pos.y);
-                this.screen.image(entity.getCurrentImage(), viewPoint.x * this.tileWidth, viewPoint.y * this.tileHeight);
+                
+                // calculate drawing position
+                int drawX = viewPoint.x * this.tileWidth;
+                int drawY = viewPoint.y * this.tileHeight;
+                
+                // center large sprites
+                PImage sprite = entity.getCurrentImage();
+                if (entity instanceof Thanos) {
+                    // center thanos sprite
+                    drawX = drawX - (sprite.width - this.tileWidth) / 2;
+                    drawY = drawY - (sprite.height - this.tileHeight) / 2;
+                }
+                
+                this.screen.image(sprite, drawX, drawY);
             }
         }
     }
